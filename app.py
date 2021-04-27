@@ -58,26 +58,42 @@ def precipitation():
     s.close()
 
     # Create dictionary from the data and append to list 'prcp_data'
-     prcp_data = []
-     for date, prcp in results:
-         prcp_dict = {}
-         prcp_dict["date"] = date
-         prcp_dict["prcp"] = prcp
-         prcp_data.append(prcp_data)
+    prcp_data = []
+    for date, prcp in results:
+        prcp_dict = {}
+        prcp_dict["date"] = date
+        prcp_dict["prcp"] = prcp
+        prcp_data.append(prcp_dict)
 
     return jsonify(prcp_data)
 
 @app.route("/api/v1.0/stations")
 def station():
-    return (
-        print("Server access stations data")
-    )
+    print("Server access stations data")
+    s = Session(engine)
 
-@app.route("/api/v1.0/tobs")
-def temperature():
-    return (
-        print("Server access temperature data")
-    )
+    # Station query
+    results = s.query(Measurement.station, func.count(Measurement.station)).\
+    group_by(Measurement.station).\
+    order_by(func.count(Measurement.station).desc()).all()
+
+    s.close()
+
+    # Create dictionary from the data and append to list 'station_data'
+    station_data = []
+    for station, count in results:
+        station_dict = {}
+        station_dict["station"] = station
+        station_dict["count"] = count
+        station_data.append(station_dict)
+    
+    return jsonify(station_data)
+
+# @app.route("/api/v1.0/tobs")
+# def temperature():
+#     return (
+#         print("Server access temperature data")
+#     )
 
 if __name__ == '__main__':
     app.run(debug=True)
