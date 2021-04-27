@@ -4,6 +4,7 @@ import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, func
+from dateutil import parser
 
 from flask import Flask, jsonify
 
@@ -41,8 +42,7 @@ def welcome():
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/MM-DD-YYYY/<br/>"
-        f"/api/v1.0/MM-DD-YYYY/MM-DD-YYYY>"
+        f"/api/v1.0/'Starting Date'"
     )
 
 @app.route("/api/v1.0/precipitation")
@@ -96,13 +96,42 @@ def temperature():
 
     # Create dictionary from the data and append to list 'tobs_data'
     tobs_data = []
-    for date, temp in results:
+    for date, tobs in results:
         tobs_dict = {}
         tobs_dict["date"] = date
-        tobs_dict["temperature"] = temp
-        tobs_data.append(tobs_dict)    
+        tobs_dict["tobs"] = tobs
+        tobs_data.append(tobs_dict)
 
     return jsonify(tobs_data)
+
+@app.route("/api/v1.0/<start_date>")
+def temp_date(start_date):
+
+    for x in start_date.splitlines():
+        date = parser.parse(x)
+        mod_date = date.strftime("%Y-%m-%d")
+
+    s = Session(engine)
+    
+    sel = [Measurement.date,
+       func.min(Measurement.tobs), 
+       func.max(Measurement.tobs), 
+       func.avg(Measurement.tobs)]
+       
+    results = s.query(*sel).filter(Measurement.date >= mod_date).group_by(Measurement.date).all()
+
+    s.close()
+
+    tempDate_list = []
+    for date, min, max, avg in results:
+        tempDate_dict = {}
+        tempDate_dict["date"] = date
+        tempDate_dict["min"] = min
+        tempDate_dict["max"] = max
+        tempDate_dict["avg"] = avg
+        tempDate_list.append(tempDate_dict)
+    
+    return jsonify(tempDate_list)
 
 if __name__ == '__main__':
     app.run(debug=True)
