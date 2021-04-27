@@ -73,27 +73,36 @@ def station():
     s = Session(engine)
 
     # Station query
-    results = s.query(Measurement.station, func.count(Measurement.station)).\
-    group_by(Measurement.station).\
-    order_by(func.count(Measurement.station).desc()).all()
+    results = s.query(Station.station).all()
 
     s.close()
 
-    # Create dictionary from the data and append to list 'station_data'
-    station_data = []
-    for station, count in results:
-        station_dict = {}
-        station_dict["station"] = station
-        station_dict["count"] = count
-        station_data.append(station_dict)
-    
+    # Convert list of tuples into normal list
+    station_data = list(np.ravel(results))
+
     return jsonify(station_data)
 
-# @app.route("/api/v1.0/tobs")
-# def temperature():
-#     return (
-#         print("Server access temperature data")
-#     )
+@app.route("/api/v1.0/tobs")
+def temperature():
+    print("Server access temperature data")
+    s = Session(engine)
+
+    # Temperature query
+    results = s.query(Measurement.date, Measurement.tobs).\
+    filter(Measurement.station == 'USC00519281', Measurement.date.between('2016-08-23', '2017-08-23')).\
+    order_by('date').all()
+
+    s.close()
+
+    # Create dictionary from the data and append to list 'tobs_data'
+    tobs_data = []
+    for date, temp in results:
+        tobs_dict = {}
+        tobs_dict["date"] = date
+        tobs_dict["temperature"] = temp
+        tobs_data.append(tobs_dict)    
+
+    return jsonify(tobs_data)
 
 if __name__ == '__main__':
     app.run(debug=True)
